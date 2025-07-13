@@ -57,7 +57,7 @@ describe('Todo App Integration Tests', () => {
       
       // Initially should show empty state
       expect(screen.getByText('Chưa có công việc nào')).toBeInTheDocument();
-      expect(screen.getByText('0')).toBeInTheDocument(); // Total count in stats
+      expect(screen.getByTestId('total-count')).toHaveTextContent('0');
       
       // Add a new todo
       const input = screen.getByPlaceholderText('Thêm công việc mới...');
@@ -72,7 +72,7 @@ describe('Todo App Integration Tests', () => {
       });
       
       // Stats should update
-      expect(screen.getByText('1')).toBeInTheDocument(); // Total: 1
+      expect(screen.getByTestId('total-count')).toHaveTextContent('1');
       expect(screen.queryByText('Chưa có công việc nào')).not.toBeInTheDocument();
       
       // Input should be cleared
@@ -90,9 +90,9 @@ describe('Todo App Integration Tests', () => {
       });
       
       // Initial stats: 1 total, 1 pending, 0 completed
-      expect(screen.getByText('1')).toBeInTheDocument(); // Total
-      expect(screen.getByText('1')).toBeInTheDocument(); // Pending
-      expect(screen.getByText('0')).toBeInTheDocument(); // Completed
+      expect(screen.getByTestId('total-count')).toHaveTextContent('1');
+      expect(screen.getByTestId('pending-count')).toHaveTextContent('1');
+      expect(screen.getByTestId('completed-count')).toHaveTextContent('0');
       expect(screen.getByText('0% hoàn thành')).toBeInTheDocument();
       
       // Complete the todo
@@ -154,7 +154,7 @@ describe('Todo App Integration Tests', () => {
       });
       
       // Initial state: 1 todo
-      expect(screen.getByText('1')).toBeInTheDocument(); // Total count
+      expect(screen.getByTestId('total-count')).toHaveTextContent('1');
       
       // Delete the todo
       const deleteButton = screen.getByLabelText('Xóa "Buy groceries"');
@@ -166,7 +166,7 @@ describe('Todo App Integration Tests', () => {
       });
       
       // Stats should update
-      expect(screen.getByText('0')).toBeInTheDocument(); // Total count
+      expect(screen.getByTestId('total-count')).toHaveTextContent('0');
       expect(screen.queryByText('Buy groceries')).not.toBeInTheDocument();
     });
   });
@@ -202,7 +202,7 @@ describe('Todo App Integration Tests', () => {
       });
       
       // Stats should show 3 total, 3 pending, 0 completed
-      expect(screen.getByText('3')).toBeInTheDocument(); // Total
+      expect(screen.getByTestId('total-count')).toHaveTextContent('3');
       expect(screen.getByText('0% hoàn thành')).toBeInTheDocument();
       
       // Third todo should be first (newest first)
@@ -229,8 +229,8 @@ describe('Todo App Integration Tests', () => {
       const badges = screen.getAllByText('3');
       expect(badges[0]).toBeInTheDocument(); // Total
       
-      expect(screen.getByText('2')).toBeInTheDocument(); // Pending
-      expect(screen.getByText('1')).toBeInTheDocument(); // Completed
+      expect(screen.getByTestId('pending-count')).toHaveTextContent('2');
+      expect(screen.getByTestId('completed-count')).toHaveTextContent('1');
       expect(screen.getByText('33% hoàn thành')).toBeInTheDocument();
       
       // Incomplete todos should be shown first
@@ -241,6 +241,15 @@ describe('Todo App Integration Tests', () => {
     });
 
     it('should handle rapid user interactions', async () => {
+      // Setup unique ID generation for this test
+      let idCounter = 0;
+      Object.defineProperty(global, 'crypto', {
+        value: {
+          randomUUID: () => `rapid-test-uuid-${++idCounter}`,
+        },
+        writable: true,
+      });
+
       render(<TodoApp />);
       
       await waitFor(() => {
@@ -254,6 +263,8 @@ describe('Todo App Integration Tests', () => {
       for (let i = 1; i <= 5; i++) {
         await user.type(input, `Rapid todo ${i}`);
         await user.click(addButton);
+        // Small delay between additions to ensure proper state updates
+        await new Promise(resolve => setTimeout(resolve, 10));
       }
       
       // All todos should be added
@@ -263,18 +274,29 @@ describe('Todo App Integration Tests', () => {
       });
       
       // Stats should reflect all todos
-      expect(screen.getByText('5')).toBeInTheDocument(); // Total
+      expect(screen.getByTestId('total-count')).toHaveTextContent('5');
       
-      // Rapidly complete todos
+      // Complete exactly 3 todos (should result in 60% completion)
       const checkboxes = screen.getAllByRole('checkbox');
-      for (let i = 0; i < 3; i++) {
-        await user.click(checkboxes[i]);
-      }
+      expect(checkboxes).toHaveLength(5);
       
-      // Stats should update
+      // Complete first 3 todos with delays between clicks
+      await user.click(checkboxes[0]);
+      await new Promise(resolve => setTimeout(resolve, 50));
+      await user.click(checkboxes[1]);
+      await new Promise(resolve => setTimeout(resolve, 50));
+      await user.click(checkboxes[2]);
+      
+      // Wait for state updates
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      // Stats should update (3 out of 5 completed = 60%)
       await waitFor(() => {
+        expect(screen.getByTestId('completed-count')).toHaveTextContent('3');
+        expect(screen.getByTestId('pending-count')).toHaveTextContent('2');
+        expect(screen.getByTestId('total-count')).toHaveTextContent('5');
         expect(screen.getByText('60% hoàn thành')).toBeInTheDocument();
-      });
+      }, { timeout: 3000 });
     });
   });
 
@@ -317,7 +339,7 @@ describe('Todo App Integration Tests', () => {
       });
       
       // Stats should reflect loaded todos
-      expect(screen.getByText('2')).toBeInTheDocument(); // Total
+      expect(screen.getByTestId('total-count')).toHaveTextContent('2');
       expect(screen.getByText('50% hoàn thành')).toBeInTheDocument();
     });
 
@@ -361,7 +383,7 @@ describe('Todo App Integration Tests', () => {
       
       // Should not create any todo
       expect(screen.getByText('Chưa có công việc nào')).toBeInTheDocument();
-      expect(screen.getByText('0')).toBeInTheDocument(); // Total count
+      expect(screen.getByTestId('total-count')).toHaveTextContent('0');
       
       // Try whitespace-only todo
       await user.type(input, '   ');
@@ -468,9 +490,9 @@ describe('Todo App Integration Tests', () => {
         expect(screen.getByText('Buy groceries')).toBeInTheDocument();
       });
       
-      // Start from input
+      // Start from input and add some text to enable the button
       const input = screen.getByPlaceholderText('Thêm công việc mới...');
-      input.focus();
+      await user.type(input, 'Test navigation');
       
       // Tab through form
       await user.tab(); // Add button

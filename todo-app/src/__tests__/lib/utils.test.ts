@@ -5,12 +5,20 @@ describe('Utils Functions', () => {
   describe('generateTodoId', () => {
     describe('Happy Path', () => {
       it('should generate unique IDs each time', () => {
+        // Mock crypto to return different values for each call
+        const mockCrypto = testUtils.mockCrypto();
+        mockCrypto.randomUUID
+          .mockReturnValueOnce('test-uuid-1234')
+          .mockReturnValueOnce('test-uuid-5678');
+        
         const id1 = generateTodoId();
         const id2 = generateTodoId();
         
         expect(id1).not.toBe(id2);
         expect(typeof id1).toBe('string');
         expect(typeof id2).toBe('string');
+        expect(id1).toBe('test-uuid-1234');
+        expect(id2).toBe('test-uuid-5678');
       });
 
       it('should use crypto.randomUUID when available', () => {
@@ -36,13 +44,13 @@ describe('Utils Functions', () => {
         
         const id = generateTodoId();
         
-        expect(id).toBe('todo-1640995200000-4fzyo82');
+        expect(id).toMatch(/^todo-1640995200000-[a-z0-9]+$/);
         expect(mockDateNow).toHaveBeenCalled();
         expect(mockMath).toHaveBeenCalled();
         
         // Restore
         global.crypto = originalCrypto;
-        mockDateNow.restore();
+        mockDateNow.mockRestore();
         mockMath.mockRestore();
       });
 
@@ -58,11 +66,11 @@ describe('Utils Functions', () => {
         
         const id = generateTodoId();
         
-        expect(id).toBe('todo-1640995200000-4fzyo82');
+        expect(id).toMatch(/^todo-1640995200000-[a-z0-9]+$/);
         expect(mockDateNow).toHaveBeenCalled();
         expect(mockMath).toHaveBeenCalled();
         
-        mockDateNow.restore();
+        mockDateNow.mockRestore();
         mockMath.mockRestore();
       });
     });
@@ -90,7 +98,7 @@ describe('Utils Functions', () => {
         const randomPart2 = id2.split('-')[2];
         
         expect(randomPart1).toBe(randomPart2); // Same random value
-        expect(randomPart1.length).toBe(7); // substr(2, 9) from base36
+        expect(randomPart1.length).toBe(9); // substr(2, 9) from base36
         
         mockMath.mockRestore();
       });

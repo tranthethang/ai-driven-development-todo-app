@@ -24,10 +24,13 @@ export const AddTodoForm = ({ onAdd }: AddTodoFormProps) => {
     setIsLoading(true);
     
     try {
-      const success = onAdd(inputValue);
+      const result = onAdd(inputValue);
+      const success = result instanceof Promise ? await result : result;
       if (success) {
         setInputValue('');
       }
+    } catch (error) {
+      console.error('Error adding todo:', error);
     } finally {
       setIsLoading(false);
     }

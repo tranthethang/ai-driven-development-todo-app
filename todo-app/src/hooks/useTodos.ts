@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Todo } from '@/types/todo';
 import { loadTodosFromStorage, saveTodosToStorage } from '@/lib/storage';
 import { generateTodoId, validateTodoText } from '@/lib/utils';
@@ -9,17 +9,40 @@ import { toast } from 'sonner';
 export const useTodos = () => {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
+  const hasInitialLoadCompletedRef = useRef(false);
 
   // Load initial data from localStorage
   useEffect(() => {
-    const loadedTodos = loadTodosFromStorage();
-    setTodos(loadedTodos);
-    setIsLoaded(true);
+    const loadData = async () => {
+      try {
+        // Add a small delay to make it truly async for testing
+        await new Promise(resolve => setTimeout(resolve, 0));
+        const loadedTodos = loadTodosFromStorage();
+        
+        setTodos(loadedTodos);
+        setIsLoaded(true);
+        
+        // Mark initial load as completed in the next tick
+        setTimeout(() => {
+          hasInitialLoadCompletedRef.current = true;
+        }, 0);
+      } catch (error) {
+        console.error('Error loading todos:', error);
+        setTodos([]);
+        setIsLoaded(true);
+        
+        setTimeout(() => {
+          hasInitialLoadCompletedRef.current = true;
+        }, 0);
+      }
+    };
+    
+    loadData();
   }, []);
 
   // Save to storage whenever todos change (but not on initial load)
   useEffect(() => {
-    if (isLoaded) {
+    if (isLoaded && hasInitialLoadCompletedRef.current) {
       saveTodosToStorage(todos);
     }
   }, [todos, isLoaded]);

@@ -14,6 +14,9 @@ export const generateTodoId = (): string => {
 };
 
 export const validateTodoText = (text: string): boolean => {
+  if (typeof text !== 'string') {
+    return false;
+  }
   const trimmedText = text.trim();
   return trimmedText.length > 0 && trimmedText.length <= 500; // Max 500 characters
 };

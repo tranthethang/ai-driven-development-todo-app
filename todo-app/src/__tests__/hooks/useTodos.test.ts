@@ -119,6 +119,8 @@ describe('useTodos Hook', () => {
         
         await act(async () => {
           await testUtils.waitForAsync();
+          // Wait for the initial load completion flag to be set
+          await new Promise(resolve => setTimeout(resolve, 10));
         });
         
         // Now add a todo - this should trigger save
@@ -445,7 +447,7 @@ describe('useTodos Hook', () => {
           result.current.toggleComplete('todo-1');
         });
         
-        expect(result.current.todos[0].completed).toBe(false); // todo-1 was incomplete
+        expect(result.current.todos[0].completed).toBe(true); // todo-1 was toggled to complete
         expect(result.current.todos[1].completed).toBe(true); // todo-2 stays completed
       });
 
@@ -594,6 +596,8 @@ describe('useTodos Hook', () => {
 
   describe('Integration Tests', () => {
     it('should handle multiple operations in sequence', async () => {
+      mockGenerateId.mockReturnValueOnce('first-id').mockReturnValueOnce('second-id');
+      
       const { result } = renderHook(() => useTodos());
       
       await act(async () => {
@@ -608,23 +612,23 @@ describe('useTodos Hook', () => {
       
       expect(result.current.todos).toHaveLength(2);
       
-      // Toggle completion
+      // Toggle completion of first todo (which is at index 1 due to prepending)
       act(() => {
-        result.current.toggleComplete('test-id-123');
+        result.current.toggleComplete('first-id');
       });
       
       expect(result.current.todos[1].completed).toBe(true);
       
-      // Update todo
+      // Update first todo
       act(() => {
-        result.current.updateTodo('test-id-123', 'Updated first todo');
+        result.current.updateTodo('first-id', 'Updated first todo');
       });
       
       expect(result.current.todos[1].text).toBe('Updated first todo');
       
-      // Delete todo
+      // Delete first todo
       act(() => {
-        result.current.deleteTodo('test-id-123');
+        result.current.deleteTodo('first-id');
       });
       
       expect(result.current.todos).toHaveLength(1);
@@ -636,6 +640,8 @@ describe('useTodos Hook', () => {
       
       await act(async () => {
         await testUtils.waitForAsync();
+        // Wait for the initial load completion flag to be set
+        await new Promise(resolve => setTimeout(resolve, 10));
       });
       
       // Add todo

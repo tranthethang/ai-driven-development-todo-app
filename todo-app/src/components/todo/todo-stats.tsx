@@ -34,7 +34,11 @@ export const TodoStats = ({ todos }: TodoStatsProps) => {
               <ListTodo className="h-5 w-5 text-blue-500" />
               <span className="text-sm font-medium">Tổng cộng</span>
             </div>
-            <Badge variant="secondary" className="text-lg px-4 py-2 bg-blue-100 text-blue-700">
+            <Badge 
+              variant="secondary" 
+              className="text-lg px-4 py-2 bg-blue-100 text-blue-700"
+              data-testid="total-count"
+            >
               {total}
             </Badge>
           </div>
@@ -44,7 +48,11 @@ export const TodoStats = ({ todos }: TodoStatsProps) => {
               <Circle className="h-5 w-5 text-orange-500" />
               <span className="text-sm font-medium">Đang chờ</span>
             </div>
-            <Badge variant="outline" className="text-lg px-4 py-2 border-orange-500 text-orange-600 bg-white">
+            <Badge 
+              variant="outline" 
+              className="text-lg px-4 py-2 border-orange-500 text-orange-600 bg-white"
+              data-testid="pending-count"
+            >
               {pending}
             </Badge>
           </div>
@@ -54,7 +62,11 @@ export const TodoStats = ({ todos }: TodoStatsProps) => {
               <CheckCircle className="h-5 w-5 text-green-500" />
               <span className="text-sm font-medium">Hoàn thành</span>
             </div>
-            <Badge variant="outline" className="text-lg px-4 py-2 border-green-500 text-green-600 bg-white">
+            <Badge 
+              variant="outline" 
+              className="text-lg px-4 py-2 border-green-500 text-green-600 bg-white"
+              data-testid="completed-count"
+            >
               {completed}
             </Badge>
           </div>
@@ -70,6 +82,11 @@ export const TodoStats = ({ todos }: TodoStatsProps) => {
               <div
                 className="bg-gradient-to-r from-green-400 to-green-500 h-3 rounded-full transition-all duration-500 ease-out"
                 style={{ width: `${completionPercentage}%` }}
+                role="progressbar"
+                aria-valuenow={completionPercentage}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label={`${completionPercentage}% hoàn thành`}
               />
             </div>
           </div>
